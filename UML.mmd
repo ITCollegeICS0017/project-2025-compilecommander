@@ -1,0 +1,59 @@
+classDiagram
+    %% === Entities (attributes only) ===
+    class Cashier {
+      +id: string
+      +name: string
+    }
+
+    class Transaction {
+      +tx_id: string
+      +timestamp: datetime
+      +from_currency: Currency
+      +from_amount: double
+      +to_currency: Currency
+      +to_amount: double
+      +rate: double
+    }
+
+    class CurrencyReserve {
+      +balances: Map<Currency,double>
+      +low_threshold: double
+    }
+
+    class Receipt {
+      +receipt_id: string
+      +tx_id: string
+      +timestamp: datetime
+      +from_currency: Currency
+      +from_amount: double
+      +to_currency: Currency
+      +to_amount: double
+      +rate: double
+    }
+
+    class Report {
+      +date: date
+      +total_transactions: int
+      +profit: double
+      +closing_balances: Map<Currency,double>
+    }
+
+    class Currency {
+      EUR
+      USD
+      GBP
+      SEK
+      DKK
+    }
+
+    %% Mark Currency as an enumeration without using stereotypes
+    note for Currency "Enumeration of supported currencies"
+
+    %% === Relationships ===
+    Cashier "1" -- "many" Transaction : performs >
+    Receipt "1" o-- "1" Transaction : contains
+    Cashier ..> Receipt : prints
+    Cashier ..> CurrencyReserve : checks/updates
+    Transaction ..> CurrencyReserve : affects
+    Report "1" ..* Transaction : aggregates
+    Report ..> CurrencyReserve : summarizes

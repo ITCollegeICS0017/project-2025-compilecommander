@@ -1,0 +1,23 @@
+# Build artifacts
+/bin/
+/build/
+/dist/
+*.o
+*.obj
+*.exe
+*.out
+*.log
+
+# IDE / OS
+.vscode/
+.idea/
+*.user
+.DS_Store
+Thumbs.db
+
+# Latex/Office exports (if you export docs)
+*.aux
+*.toc
+*.nav
+*.snm
+*.synctex*
