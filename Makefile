@@ -1,6 +1,8 @@
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -Wpedantic
-CPPFLAGS ?= -Iinclude -MMD -MP          # include path + deps
+# Override CPPFLAGS to ensure -Iinclude is always included
+# This fixes environment variable override issues
+override CPPFLAGS += -Iinclude -MMD -MP
 LDFLAGS ?=
 LDLIBS ?=
 

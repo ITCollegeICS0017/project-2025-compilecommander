@@ -6,13 +6,31 @@
 #include "report.h"
 
 int main() {
+    const std::string DATA_FILE = "data.txt";
+
+    std::cout << "=== Currency Exchange System - Release 4 ===\n\n";
+
     // === Data Layer ===
     CurrencyRepository repo(/*lowThreshold=*/100.0);
-    repo.setBalance(Currency::EUR, 1000.0);
-    repo.setBalance(Currency::USD, 500.0);
-    repo.setBalance(Currency::GBP, 300.0);
-    repo.setBalance(Currency::SEK, 1000.0);
-    repo.setBalance(Currency::DKK, 1000.0);
+
+    // Release 4: Load persistent data from file at startup
+    std::cout << "Loading data from file...\n";
+    repo.loadAll(DATA_FILE);
+
+    // If no data was loaded (file doesn't exist or empty), set default balances
+    if (repo.getBalance(Currency::EUR) == 0.0 &&
+        repo.getBalance(Currency::USD) == 0.0 &&
+        repo.getBalance(Currency::GBP) == 0.0 &&
+        repo.getBalance(Currency::SEK) == 0.0 &&
+        repo.getBalance(Currency::DKK) == 0.0) {
+
+        std::cout << "[INFO] Initializing with default balances...\n";
+        repo.setBalance(Currency::EUR, 1000.0);
+        repo.setBalance(Currency::USD, 500.0);
+        repo.setBalance(Currency::GBP, 300.0);
+        repo.setBalance(Currency::SEK, 1000.0);
+        repo.setBalance(Currency::DKK, 1000.0);
+    }
 
     // === Shared Services ===
     RealClock clock;
@@ -27,6 +45,12 @@ int main() {
 
     // === End-of-day summary ===
     report.print_summary(std::cout, repo);
+
+    // Release 4: Save all data to file at program end
+    std::cout << "\nSaving data to file...\n";
+    repo.saveAll(DATA_FILE);
+
+    std::cout << "\n=== Program terminated. All changes saved. ===\n";
 
     return 0;
 }

@@ -4,7 +4,7 @@
 #include "transaction.h"   // ← add this
 
 class ICurrencyRepository;
-class IClock;
+struct IClock;  // Changed from 'class' to match iclock.h definition
 class Report;
 
 class ExchangeManager {

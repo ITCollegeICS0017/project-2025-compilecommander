@@ -32,8 +32,16 @@ public:
     // Configure default sample rates (1:1 except explicit pairs)
     void seedSampleRates();
 
+    // Release 4: File persistence
+    void loadAll(const std::string& filename);
+    void saveAll(const std::string& filename) const;
+
 private:
     std::map<Currency,double> balances_{};
     std::map<std::pair<Currency,Currency>, double> rates_{};
     double low_threshold_{};
+
+    // Helper methods for file parsing/formatting
+    bool parseLine(const std::string& line, Currency& curr, double& balance);
+    std::string toLine(Currency curr, double balance) const;
 };
