@@ -1,0 +1,110 @@
+%% UML.mmd — Currency Exchange System (Release 2)
+%% Valid Mermaid class diagram (no package syntax)
+
+classDiagram
+direction TB
+
+%% ==== UI Layer ====
+class ConsoleUI {
+  +ConsoleUI(mgr: ExchangeManager)
+  +run() void
+  -showMenu() void
+  -parseCurrency(s: string) Currency
+}
+
+class Receipt {
+  <<utility>>
+  +print(t: Transaction, os: ostream) void
+  +csv(t: Transaction) string
+}
+
+%% ==== Logic Layer ====
+class ExchangeManager {
+  +ExchangeManager(repo: ICurrencyRepository, clock: IClock, report: Report)
+  +processExchange(txId: string, fromC: Currency, fromA: double, toC: Currency) Transaction
+  --
+  -repo_: ICurrencyRepository&
+  -clock_: IClock&
+  -report_: Report&
+}
+
+class IClock {
+  <<interface>>
+  +now_iso8601() string
+}
+
+class RealClock {
+  +now_iso8601() string
+}
+RealClock ..|> IClock
+
+%% ==== Data Layer ====
+class ICurrencyRepository {
+  <<interface>>
+  +getRate(from: Currency, to: Currency) double
+  +getBalance(c: Currency) double
+  +setBalance(c: Currency, amount: double) void
+  +applyExchange(fromC: Currency, fromA: double, toC: Currency, toA: double) void
+}
+
+class CurrencyRepository {
+  +CurrencyRepository(lowThreshold: double)
+  +getRate(from: Currency, to: Currency) double
+  +getBalance(c: Currency) double
+  +setBalance(c: Currency, amount: double) void
+  +applyExchange(fromC: Currency, fromA: double, toC: Currency, toA: double) void
+  +low_threshold() double
+  +is_low(c: Currency) bool
+  +seedSampleRates() void
+  --
+  -balances_: map<Currency,double>
+  -rates_: map<pair<Currency,Currency>,double>
+  -low_threshold_: double
+}
+CurrencyRepository ..|> ICurrencyRepository
+
+%% ==== DTOs / Domain ====
+class Transaction {
+  +static make(id: string, ts: string, fromC: Currency, fromA: double, toC: Currency, rate: double) Transaction
+  +id() string
+  +timestamp() string
+  +from_currency() Currency
+  +from_amount() double
+  +to_currency() Currency
+  +to_amount() double
+  +rate() double
+  --
+  -tx_id_: string
+  -timestamp_: string
+  -from_currency_: Currency
+  -from_amount_: double
+  -to_currency_: Currency
+  -to_amount_: double
+  -rate_: double
+}
+
+class Report {
+  +add(t: Transaction) void
+  +print_summary(os: ostream, repo: ICurrencyRepository) void
+  --
+  -tx_: vector<Transaction>
+}
+
+class Currency {
+  <<enumeration>>
+  EUR
+  USD
+  GBP
+  SEK
+  DKK
+}
+
+%% ==== Relationships ====
+ConsoleUI --> ExchangeManager : uses
+ConsoleUI --> Receipt : prints
+ExchangeManager --> ICurrencyRepository : depends
+ExchangeManager --> IClock : uses time
+ExchangeManager --> Report : updates
+ExchangeManager --> Transaction : returns
+CurrencyRepository ..|> ICurrencyRepository
+RealClock ..|> IClock

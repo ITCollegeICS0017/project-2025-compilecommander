@@ -1,0 +1,105 @@
+%% Activity Diagram: processExchange() operation
+%% Release 3 - Currency Exchange System
+%% Shows normal flow (green) and error flows (red)
+
+graph TD
+    Start([Start: User enters input])
+    InputPrompt["💬 Show menu: FROM AMOUNT TO format"]
+    ReadInput["📥 Read user input line"]
+
+    InputOK{Input fields<br/>captured?}
+    ErrorEmpty["❌ Error: Empty input"]
+    RetryMenu1["Ask user to re-enter"]
+
+    ParseCurr1{"Parse FROM<br/>currency"}
+    ErrorCurr1["❌ Throw InvalidInput<br/>Unknown FROM currency"]
+
+    ParseAmount{Parse AMOUNT<br/>as double}
+    ErrorAmount["❌ Error: Invalid number format"]
+
+    ParseCurr2{"Parse TO<br/>currency"}
+    ErrorCurr2["❌ Throw InvalidInput<br/>Unknown TO currency"]
+
+    CallProcess["📞 Call ExchangeManager::processExchange()"]
+
+    ValidateAmount{"Logic: amount >= 0?"}
+    ErrorAmount2["❌ Throw InvalidData<br/>Amount must be non-negative"]
+
+    GetRate["📊 Repository::getRate(fromC, toC)"]
+    RateFound{Rate exists<br/>in data?}
+    ErrorRate["❌ Throw MissingRate<br/>Rate not found for pair"]
+
+    ComputePayout["💰 Compute payout = amount × rate"]
+
+    GetBalance["📊 Repository::getBalance(toC)"]
+
+    CheckReserve{"Reserve of toC<br/>>= payout?"}
+    ErrorReserve["❌ Throw InsufficientReserve<br/>Not enough to pay out"]
+
+    ApplyExchange["💾 Repository::applyExchange()"]
+    UpdateBalances["Update: from += amount<br/>to -= payout"]
+
+    CreateTx["📝 Create Transaction object"]
+    AddToReport["📋 Report::add(transaction)"]
+
+    PrintReceipt["🧾 UI: Print Receipt"]
+    PrintCSV["📊 UI: Print CSV line"]
+
+    Success(["✅ End: Exchange successful"])
+
+    %% UI Error Flows
+    InputOK -->|NO| ErrorEmpty
+    ErrorEmpty --> RetryMenu1
+    RetryMenu1 --> ReadInput
+
+    InputOK -->|YES| ParseCurr1
+    ParseCurr1 -->|Invalid| ErrorCurr1
+    ErrorCurr1 --> RetryMenu1
+
+    ParseCurr1 -->|Valid| ParseAmount
+    ParseAmount -->|Invalid| ErrorAmount
+    ErrorAmount --> RetryMenu1
+
+    ParseAmount -->|Valid| ParseCurr2
+    ParseCurr2 -->|Invalid| ErrorCurr2
+    ErrorCurr2 --> RetryMenu1
+
+    ParseCurr2 -->|Valid| CallProcess
+
+    %% Logic Layer
+    CallProcess --> ValidateAmount
+    ValidateAmount -->|NO| ErrorAmount2
+    ErrorAmount2 --> RetryMenu1
+
+    ValidateAmount -->|YES| GetRate
+    GetRate --> RateFound
+    RateFound -->|NO| ErrorRate
+    ErrorRate --> RetryMenu1
+
+    RateFound -->|YES| ComputePayout
+    ComputePayout --> GetBalance
+    GetBalance --> CheckReserve
+
+    CheckReserve -->|NO| ErrorReserve
+    ErrorReserve --> RetryMenu1
+
+    %% Data Layer & Success Path
+    CheckReserve -->|YES| ApplyExchange
+    ApplyExchange --> UpdateBalances
+    UpdateBalances --> CreateTx
+    CreateTx --> AddToReport
+    AddToReport --> PrintReceipt
+    PrintReceipt --> PrintCSV
+    PrintCSV --> Success
+
+    %% All error flows lead back to menu
+    style Start fill:#90EE90
+    style Success fill:#90EE90
+    style ErrorEmpty fill:#FFB6C6
+    style ErrorCurr1 fill:#FFB6C6
+    style ErrorAmount fill:#FFB6C6
+    style ErrorCurr2 fill:#FFB6C6
+    style ErrorAmount2 fill:#FFB6C6
+    style ErrorRate fill:#FFB6C6
+    style ErrorReserve fill:#FFB6C6
+    style RetryMenu1 fill:#FFE4B5

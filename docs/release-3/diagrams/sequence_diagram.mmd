@@ -1,0 +1,92 @@
+sequenceDiagram
+    %% Sequence Diagram: processExchange() - Normal and Error Flows
+    %% Release 3 - Currency Exchange System
+    %% Shows UI → Logic → Repository interaction
+    participant User
+    participant UI as ConsoleUI
+    participant Logic as ExchangeManager
+    participant Repo as ICurrencyRepository<br/>(CurrencyRepository)
+    participant Report as Report
+
+    rect rgb(144, 238, 144)
+    Note over User,Report: === NORMAL FLOW (Green Path) ===
+    end
+
+    User->>UI: EUR 100 USD
+    activate UI
+    Note over UI: Parse input
+
+    UI->>UI: Validate fields present?
+    alt Fields empty
+        UI->>User: ❌ Error: Enter all fields
+    else Fields OK
+        UI->>UI: Parse currencies
+        alt Currency invalid
+            UI->>User: ❌ Error: Unknown currency
+        else Currencies OK
+            UI->>Logic: processExchange(txId, EUR, 100, USD)
+            activate Logic
+
+            Logic->>Logic: Check: amount >= 0?
+            alt Amount < 0
+                Logic-->>UI: ❌ InvalidData Exception
+                Note over UI: Catch exception
+                UI->>User: ❌ Amount must be non-negative
+            else Amount OK
+                Logic->>Repo: getRate(EUR, USD)
+                activate Repo
+                Repo-->>Logic: rate = 1.10
+                deactivate Repo
+
+                Note over Logic: payout = 100 × 1.10 = 110
+
+                Logic->>Repo: getBalance(USD)
+                activate Repo
+                Repo-->>Logic: balance = 500.0
+                deactivate Repo
+
+                alt Reserve < payout
+                    Logic-->>UI: ❌ InsufficientReserve Exception
+                    Note over UI: Catch exception
+                    UI->>User: ❌ Insufficient reserve
+                else Reserve OK (500 >= 110)
+                    Logic->>Repo: applyExchange(EUR, 100, USD, 110)
+                    activate Repo
+                    Note over Repo: EUR += 100, USD -= 110
+                    Repo-->>Logic: OK
+                    deactivate Repo
+
+                    Note over Logic: Create Transaction<br/>Add to Report
+                    Logic->>Report: add(transaction)
+                    activate Report
+                    Report-->>Logic: OK
+                    deactivate Report
+
+                    Logic-->>UI: ✅ Transaction object
+                    deactivate Logic
+
+                    UI->>User: 🧾 Receipt
+                    Note over UI: 100 EUR → 110 USD @ 1.10
+                end
+            end
+        end
+    end
+    deactivate UI
+
+    rect rgb(255, 228, 181)
+    Note over User,Report: === SESSION END ===
+    end
+
+    User->>UI: quit
+    activate UI
+    UI->>Report: print_summary(repo)
+    activate Report
+    Note over Report: Print all transactions<br/>Print final balances
+    Report->>Repo: getBalance(all currencies)
+    activate Repo
+    Repo-->>Report: balances
+    deactivate Repo
+    Report-->>UI: Summary text
+    deactivate Report
+    UI->>User: Goodbye!
+    deactivate UI
